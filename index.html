@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>TikTok Video Downloader - Free Tool</title>
+  <meta name="description" content="Tải video TikTok hàng loạt miễn phí, không watermark, nhanh chóng."/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#0a0a0f;--surface:#12121a;--surface2:#1a1a28;--surface3:#22223a;
+      --border:rgba(255,255,255,.08);--border-h:rgba(255,255,255,.18);
+      --primary:#fe2c55;--primary-g:rgba(254,44,85,.35);
+      --secondary:#25f4ee;--text:#f0f0f0;--muted:#888;--dim:#555;
+      --success:#22c55e;--warning:#f59e0b;--error:#ef4444;
+      --r:16px;--rs:10px;
+    }
+    body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+    body::before{content:'';position:fixed;inset:0;background:
+      radial-gradient(ellipse 80% 60% at 20% 10%,rgba(254,44,85,.08) 0%,transparent 60%),
+      radial-gradient(ellipse 60% 50% at 80% 80%,rgba(37,244,238,.06) 0%,transparent 60%);
+      pointer-events:none;z-index:0}
+    #root{position:relative;z-index:1}
+
+    .header{text-align:center;padding:56px 20px 32px}
+    .logo{display:inline-flex;align-items:center;gap:12px;margin-bottom:14px}
+    .logo-icon{width:56px;height:56px;background:linear-gradient(135deg,var(--primary),#ff6b6b);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:30px;box-shadow:0 0 36px var(--primary-g)}
+    .logo h1{font-size:2.2rem;font-weight:800;background:linear-gradient(90deg,var(--primary),var(--secondary));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .header p{color:var(--muted);font-size:.92rem;margin-top:4px}
+
+    .container{max-width:900px;margin:0 auto;padding:0 20px 100px}
+
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:28px;margin-bottom:18px}
+    .card-label{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--secondary);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+
+    .url-textarea{width:100%;min-height:140px;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--rs);color:var(--text);font-family:'Inter',monospace;font-size:.87rem;line-height:1.75;padding:14px 16px;resize:vertical;transition:border-color .25s,box-shadow .25s;outline:none}
+    .url-textarea::placeholder{color:var(--dim)}
+    .url-textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-g)}
+    .url-hint{margin-top:8px;font-size:.76rem;color:var(--dim)}
+    .url-hint b{color:var(--secondary)}
+
+    .actions{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;align-items:center}
+    .btn{display:inline-flex;align-items:center;gap:8px;padding:12px 24px;border-radius:var(--rs);border:none;cursor:pointer;font-family:'Inter',sans-serif;font-size:.9rem;font-weight:600;transition:all .2s}
+    .btn:active{transform:scale(.97)}
+    .btn-primary{background:linear-gradient(135deg,var(--primary),#c41742);color:#fff;box-shadow:0 4px 20px var(--primary-g)}
+    .btn-primary:hover:not(:disabled){box-shadow:0 6px 28px var(--primary-g);transform:translateY(-1px)}
+    .btn-primary:disabled{opacity:.45;cursor:not-allowed}
+    .btn-secondary{background:var(--surface2);color:var(--muted);border:1px solid var(--border)}
+    .btn-secondary:hover{color:var(--text);border-color:var(--border-h)}
+    .btn-dl-all{background:linear-gradient(135deg,#0ea5e9,#0284c7);color:#fff;box-shadow:0 4px 16px rgba(14,165,233,.3)}
+    .btn-dl-all:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 24px rgba(14,165,233,.4)}
+    .btn-dl-all:disabled{opacity:.45;cursor:not-allowed}
+
+    .prog-wrap{height:4px;background:var(--surface3);border-radius:99px;overflow:hidden;margin-top:16px}
+    .prog-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:99px;transition:width .4s}
+    .prog-txt{font-size:.75rem;color:var(--muted);margin-top:6px;text-align:right}
+
+    .stats-bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+    .chip{background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:6px 14px;font-size:.78rem;font-weight:500;display:flex;align-items:center;gap:5px}
+    .chip.ok{border-color:rgba(34,197,94,.4);color:var(--success)}
+    .chip.err{border-color:rgba(239,68,68,.4);color:var(--error)}
+    .chip.info{border-color:rgba(37,244,238,.3);color:var(--secondary)}
+    .chip.warn{color:var(--warning)}
+
+    .results{display:flex;flex-direction:column;gap:14px}
+
+    .vcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;display:flex;transition:all .25s;animation:slideIn .3s ease both}
+    .vcard:hover{border-color:var(--border-h);transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,0,0,.4)}
+    @keyframes slideIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+    .vcard.ok{border-left:3px solid var(--success)}
+    .vcard.error{border-left:3px solid var(--error)}
+    .vcard.loading{border-left:3px solid var(--warning)}
+
+    .vthumb{width:92px;min-height:92px;flex-shrink:0;background:var(--surface3);overflow:hidden}
+    .vthumb img{width:100%;height:100%;object-fit:cover;display:block}
+    .vthumb-ph{width:100%;height:100%;min-height:92px;display:flex;align-items:center;justify-content:center;font-size:28px;color:var(--dim)}
+
+    .vinfo{flex:1;padding:14px 16px;display:flex;flex-direction:column;gap:6px;min-width:0}
+    .vtitle{font-size:.9rem;font-weight:600;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+    .vmeta{display:flex;flex-wrap:wrap;gap:10px;font-size:.74rem;color:var(--muted)}
+    .vurl{font-size:.7rem;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:360px}
+    .verr{font-size:.8rem;color:var(--error);padding:6px 10px;background:rgba(239,68,68,.08);border-radius:6px}
+
+    .vbtns{display:flex;flex-direction:column;align-items:flex-end;justify-content:center;padding:14px 16px;gap:8px;flex-shrink:0}
+    .ibtn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:8px;border:none;cursor:pointer;font-family:'Inter',sans-serif;font-size:.8rem;font-weight:600;transition:all .2s;white-space:nowrap}
+    .ibtn:hover{transform:translateY(-1px)}
+    .ibtn-video{background:linear-gradient(135deg,var(--primary),#c41742);color:#fff;box-shadow:0 2px 12px var(--primary-g)}
+    .ibtn-audio{background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff;box-shadow:0 2px 10px rgba(124,58,237,.3)}
+    .ibtn-nowm{background:linear-gradient(135deg,#0ea5e9,#0284c7);color:#fff;box-shadow:0 2px 10px rgba(14,165,233,.3)}
+
+    .note-box{background:rgba(37,244,238,.05);border:1px solid rgba(37,244,238,.15);border-radius:var(--rs);padding:14px 16px;font-size:.8rem;color:var(--muted);line-height:1.6;margin-bottom:18px}
+    .note-box b{color:var(--secondary)}
+
+    .spinner{width:17px;height:17px;border:2.5px solid rgba(255,255,255,.15);border-top-color:var(--primary);border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .skeleton{background:linear-gradient(90deg,var(--surface2) 25%,var(--surface3) 50%,var(--surface2) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:6px}
+    @keyframes shimmer{from{background-position:200% 0}to{background-position:-200% 0}}
+
+    .empty{text-align:center;padding:64px 20px;color:var(--dim)}
+    .empty-icon{font-size:52px;margin-bottom:14px}
+    .empty p{font-size:.92rem;line-height:1.6}
+
+    footer{text-align:center;padding:20px;font-size:.75rem;color:var(--dim)}
+    footer a{color:var(--secondary);text-decoration:none}
+
+    ::-webkit-scrollbar{width:6px}
+    ::-webkit-scrollbar-track{background:var(--surface)}
+    ::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:99px}
+    @media(max-width:600px){
+      .vthumb{width:72px}
+      .vbtns{padding:10px}
+      .ibtn{padding:7px 11px;font-size:.75rem}
+      .logo h1{font-size:1.7rem}
+    }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useCallback, useRef } = React;
+
+const PROXY = 'https://api.allorigins.win/get?url=';
+
+function fmt(n){if(!n&&n!==0)return'—';if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)return(n/1e3).toFixed(1)+'K';return String(n)}
+function dur(s){if(!s)return'—';return`${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`}
+
+async function fetchInfo(url) {
+  // Try direct first (works on most browsers from HTTPS)
+  const apiUrl = `https://tikwm.com/api/?url=${encodeURIComponent(url)}`;
+  try {
+    const r = await fetch(apiUrl, { mode: 'cors' });
+    if (r.ok) {
+      const j = await r.json();
+      if (j.code === 0) return j.data;
+      throw new Error(j.msg || 'API error');
+    }
+  } catch(e) {
+    if (e.message && e.message !== 'Failed to fetch') throw e;
+  }
+  // Fallback: CORS proxy
+  const proxyUrl = PROXY + encodeURIComponent(apiUrl);
+  const r2 = await fetch(proxyUrl);
+  if (!r2.ok) throw new Error(`HTTP ${r2.status}`);
+  const wrapper = await r2.json();
+  const j = JSON.parse(wrapper.contents);
+  if (j.code !== 0) throw new Error(j.msg || 'API error');
+  return j.data;
+}
+
+function dlFile(href, filename) {
+  const a = document.createElement('a');
+  a.href = href; a.download = filename; a.target = '_blank'; a.rel = 'noopener';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+
+const DlIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+  </svg>
+);
+
+function VideoCard({ item, index }) {
+  const { url, status, data, error } = item;
+  const title = data?.title || `tiktok_${data?.id || index}`;
+
+  return (
+    <div className={`vcard ${status}`} style={{ animationDelay: `${index * 40}ms` }}>
+      <div className="vthumb">
+        {status === 'loading' && <div className="vthumb-ph skeleton" style={{ height: 92 }}/>}
+        {status === 'ok' && (data?.cover
+          ? <img src={data.cover} alt="thumb" loading="lazy"/>
+          : <div className="vthumb-ph">🎵</div>)}
+        {status === 'error' && <div className="vthumb-ph">❌</div>}
+      </div>
+
+      <div className="vinfo">
+        {status === 'loading' && <>
+          <div className="skeleton" style={{ height: 14, width: '78%' }}/>
+          <div className="skeleton" style={{ height: 11, width: '45%', marginTop: 5 }}/>
+        </>}
+        {status === 'ok' && <>
+          <div className="vtitle">{data.title || 'Không có tiêu đề'}</div>
+          <div className="vmeta">
+            <span>❤️ {fmt(data.digg_count)}</span>
+            <span>▶️ {fmt(data.play_count)}</span>
+            <span>💬 {fmt(data.comment_count)}</span>
+            <span>⏱ {dur(data.duration)}</span>
+            {data.author?.nickname && <span>👤 {data.author.nickname}</span>}
+          </div>
+        </>}
+        {status === 'error' && <div className="verr">⚠️ {error}</div>}
+        <div className="vurl" title={url}>{url}</div>
+      </div>
+
+      <div className="vbtns">
+        {status === 'loading' && <div className="spinner"/>}
+        {status === 'ok' && <>
+          {data.play && (
+            <a className="ibtn ibtn-video" href={data.play} target="_blank" rel="noopener" download>
+              <DlIcon/> Video (No WM)
+            </a>
+          )}
+          {data.wmplay && (
+            <a className="ibtn ibtn-nowm" href={data.wmplay} target="_blank" rel="noopener" download>
+              <DlIcon/> Có WM
+            </a>
+          )}
+          {data.music && (
+            <a className="ibtn ibtn-audio" href={data.music} target="_blank" rel="noopener" download>
+              🎵 Audio
+            </a>
+          )}
+        </>}
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  const [urlInput, setUrlInput] = useState('');
+  const [items, setItems]       = useState([]);
+  const [loading, setLoading]   = useState(false);
+  const abortRef = useRef(false);
+
+  const urlCount = urlInput.trim()
+    ? urlInput.split('|').map(s => s.trim()).filter(Boolean).length : 0;
+
+  const handleFetch = useCallback(async () => {
+    const urls = urlInput.split('|').map(s => s.trim()).filter(Boolean);
+    if (!urls.length) return;
+    abortRef.current = false;
+    setLoading(true);
+    setItems(urls.map(url => ({ url, status: 'loading', data: null, error: null })));
+    for (let i = 0; i < urls.length; i++) {
+      if (abortRef.current) break;
+      try {
+        const data = await fetchInfo(urls[i]);
+        if (!abortRef.current)
+          setItems(p => { const n=[...p]; n[i]={...n[i],status:'ok',data}; return n; });
+      } catch(e) {
+        if (!abortRef.current)
+          setItems(p => { const n=[...p]; n[i]={...n[i],status:'error',error:e.message}; return n; });
+      }
+    }
+    setLoading(false);
+  }, [urlInput]);
+
+  const handleDownloadAll = () => {
+    items.filter(it => it.status === 'ok' && it.data?.play).forEach((it, i) => {
+      setTimeout(() => dlFile(it.data.play, `${it.data.title || 'tiktok_' + i}.mp4`), i * 800);
+    });
+  };
+
+  const done    = items.filter(i => i.status !== 'loading').length;
+  const success = items.filter(i => i.status === 'ok').length;
+  const errors  = items.filter(i => i.status === 'error').length;
+  const total   = items.length;
+  const pct     = total ? Math.round(done / total * 100) : 0;
+
+  return (
+    <div>
+      <header className="header">
+        <div className="logo">
+          <div className="logo-icon">🎵</div>
+          <h1>TikTok Downloader</h1>
+        </div>
+        <p>Tải video TikTok hàng loạt — không watermark — miễn phí</p>
+      </header>
+
+      <div className="container">
+        <div className="note-box">
+          💡 <b>Cách dùng:</b> Dán link TikTok, nhiều link ngăn cách bằng <b>|</b>, nhấn <b>Fetch</b> rồi click nút tải. Video lưu vào thư mục <b>Downloads</b> của bạn.
+        </div>
+
+        <div className="card">
+          <div className="card-label">
+            🔗 Danh sách URL TikTok
+            {urlCount > 0 && <span style={{marginLeft:'auto',color:'var(--muted)',textTransform:'none',fontSize:'.75rem',letterSpacing:0}}>{urlCount} link</span>}
+          </div>
+          <textarea
+            id="url-input"
+            className="url-textarea"
+            value={urlInput}
+            onChange={e => setUrlInput(e.target.value)}
+            placeholder="https://www.tiktok.com/@user/video/111 | https://www.tiktok.com/@user/video/222 | ..."
+            disabled={loading}
+          />
+          <div className="url-hint">Ngăn cách bằng dấu <b>|</b> — hỗ trợ nhiều link cùng lúc</div>
+          <div className="actions">
+            <button id="btn-fetch" className="btn btn-primary" onClick={handleFetch} disabled={loading || !urlInput.trim()}>
+              {loading
+                ? <><span className="spinner" style={{borderTopColor:'#fff'}}/> Đang lấy thông tin…</>
+                : <><DlIcon/> Fetch Video Info</>}
+            </button>
+            {success > 0 && (
+              <button className="btn btn-dl-all" onClick={handleDownloadAll} disabled={loading}>
+                ⬇️ Tải tất cả ({success})
+              </button>
+            )}
+            <button className="btn btn-secondary" onClick={() => { abortRef.current=true; setItems([]); setUrlInput(''); setLoading(false); }}
+              disabled={!urlInput.trim() && !items.length}>
+              🗑 Xóa
+            </button>
+          </div>
+
+          {loading && total > 0 && <>
+            <div className="prog-wrap"><div className="prog-fill" style={{width:`${pct}%`}}/></div>
+            <div className="prog-txt">{done}/{total} — {pct}%</div>
+          </>}
+        </div>
+
+        {items.length > 0 && (
+          <div className="stats-bar">
+            <div className="chip info">📦 Tổng: {total}</div>
+            <div className="chip ok">✅ Thành công: {success}</div>
+            {errors > 0 && <div className="chip err">❌ Lỗi: {errors}</div>}
+            {loading && <div className="chip warn">⏳ Đang xử lý…</div>}
+          </div>
+        )}
+
+        {items.length > 0
+          ? <div className="results">
+              {items.map((it, i) => <VideoCard key={it.url + i} item={it} index={i}/>)}
+            </div>
+          : <div className="empty">
+              <div className="empty-icon">🎬</div>
+              <p>Nhập URL TikTok vào ô trên<br/>và nhấn <strong>Fetch Video Info</strong></p>
+            </div>}
+      </div>
+
+      <footer>
+        <p>TikTok Downloader — Powered by <a href="https://tikwm.com" target="_blank">TikWM API</a></p>
+      </footer>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
